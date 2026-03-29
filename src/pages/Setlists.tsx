@@ -36,7 +36,7 @@ export function Setlists() {
   };
 
   return (
-    <div>
+    <div className="p-8 overflow-y-auto h-full">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold mb-1">Setlists</h1>

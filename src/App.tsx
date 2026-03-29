@@ -7,9 +7,9 @@ import { Setlists } from './pages/Setlists';
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen bg-bg-primary">
+      <div className="flex h-screen bg-bg-primary overflow-hidden">
         <Sidebar />
-        <main className="flex-1 ml-64 p-8">
+        <main className="flex-1 ml-64 overflow-hidden">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/songs" element={<Songs />} />
