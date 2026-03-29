@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function ZipImportDialog({ onClose }: Props) {
-  const { songs: existingSongs, addSong, addConnection } = useStore();
+  const { songs: existingSongs, addSongs, addConnections } = useStore();
   const [step, setStep] = useState<Step>('upload');
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,52 +85,51 @@ export function ZipImportDialog({ onClose }: Props) {
     const selected = result.songs.filter((s) => s.selected);
     const total = selected.length;
 
-    // Import songs one by one with progress
-    for (let i = 0; i < selected.length; i++) {
-      const s = selected[i];
-      setImportProgress({ current: i + 1, total, phase: `Adding: ${s.title}` });
-      addSong({
-        id: s.id,
-        title: s.title,
-        artist: s.artist,
-        bpm: s.bpm,
-        key: s.key,
-        genre: s.genre,
-        energyLevel: s.energyLevel,
-        duration: s.duration,
-        releaseDate: s.releaseDate,
-        recordLabel: s.recordLabel,
-        notes: s.notes,
-        thumbnail: s.thumbnail,
-        createdAt: new Date().toISOString(),
-      });
-      // Yield to UI thread so progress renders
-      if (i % 5 === 0) await new Promise((r) => setTimeout(r, 0));
-    }
+    // Build all song objects
+    setImportProgress({ current: 0, total, phase: 'Preparing songs...' });
+    await new Promise((r) => setTimeout(r, 0));
 
-    // Resolve and import connections
+    const songsToAdd = selected.map((s) => ({
+      id: s.id,
+      title: s.title,
+      artist: s.artist,
+      bpm: s.bpm,
+      key: s.key,
+      genre: s.genre,
+      energyLevel: s.energyLevel,
+      duration: s.duration,
+      releaseDate: s.releaseDate,
+      recordLabel: s.recordLabel,
+      notes: s.notes,
+      thumbnail: s.thumbnail,
+      createdAt: new Date().toISOString(),
+    }));
+
+    // Add all songs in one batch
+    setImportProgress({ current: Math.floor(total / 2), total, phase: `Adding ${total} songs...` });
+    await new Promise((r) => setTimeout(r, 0));
+    addSongs(songsToAdd);
+
+    // Resolve connections
     setImportProgress({ current: total, total, phase: 'Resolving connections...' });
     await new Promise((r) => setTimeout(r, 0));
 
-    const { connections, unresolved } = resolveConnections(selected);
-    for (let i = 0; i < connections.length; i++) {
-      const conn = connections[i];
-      addConnection({
+    const { connections: resolvedConns, unresolved } = resolveConnections(selected);
+
+    if (resolvedConns.length > 0) {
+      const connectionsToAdd = resolvedConns.map((conn) => ({
         id: crypto.randomUUID(),
         fromSongId: conn.fromSongId,
         toSongId: conn.toSongId,
         notes: '',
         createdAt: new Date().toISOString(),
-      });
-      if (i % 10 === 0) {
-        setImportProgress({ current: total, total, phase: `Creating connection ${i + 1}/${connections.length}...` });
-        await new Promise((r) => setTimeout(r, 0));
-      }
+      }));
+      addConnections(connectionsToAdd);
     }
 
     setImportStats({
       songs: selected.length,
-      connections: connections.length,
+      connections: resolvedConns.length,
       unresolved: unresolved.length,
     });
     setStep('done');

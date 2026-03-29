@@ -69,7 +69,20 @@ export async function parseZipImport(
     (name) => name.toLowerCase().endsWith('.csv') && !name.startsWith('__MACOSX')
   );
   if (csvEntry) {
-    csvText = await zip.files[csvEntry].async('string');
+    // Read as binary and decode with TextDecoder to handle BOM and encoding
+    const csvBytes = await zip.files[csvEntry].async('uint8array');
+    const decoder = new TextDecoder('utf-8', { ignoreBOM: false });
+    csvText = decoder.decode(csvBytes);
+    // Strip BOM if present
+    if (csvText.charCodeAt(0) === 0xFEFF) {
+      csvText = csvText.slice(1);
+    }
+    // Normalize smart quotes and special whitespace
+    csvText = csvText
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n');
   } else {
     throw new Error('No CSV file found in ZIP');
   }
@@ -97,6 +110,8 @@ export async function parseZipImport(
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     onProgress?.({ phase: 'images', current: i + 1, total, currentTitle: row.title });
+    // Yield every iteration so progress renders and we can spot where it stops
+    await new Promise((r) => setTimeout(r, 0));
 
     let thumbnail: string | null = null;
     let imageFound = false;
@@ -104,9 +119,13 @@ export async function parseZipImport(
     if (row.imageFilename) {
       const imgPath = imageMap.get(row.imageFilename.toLowerCase());
       if (imgPath) {
-        const blob = await zip.files[imgPath].async('blob');
-        thumbnail = await fileToBase64(blob);
-        imageFound = true;
+        try {
+          const blob = await zip.files[imgPath].async('blob');
+          thumbnail = await fileToBase64(blob);
+          imageFound = true;
+        } catch {
+          warnings.push(`Image error: "${row.imageFilename}" for "${row.title}"`);
+        }
       } else {
         warnings.push(`Image not found: "${row.imageFilename}" for "${row.title}"`);
       }

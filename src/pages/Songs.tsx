@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore';
 import { SongFormDialog } from '../components/SongFormDialog';
 import { SongDetailPanel } from '../components/SongDetailPanel';
 import { ZipImportDialog } from '../components/ZipImportDialog';
+import { ReimportConnectionsDialog } from '../components/ReimportConnectionsDialog';
 import type { Song } from '../types';
 
 type SortField = 'title' | 'artist' | 'bpm' | 'key' | 'energyLevel' | 'genre' | 'releaseDate';
@@ -13,6 +14,7 @@ export function Songs() {
   const { songs, connections, addSong, updateSong, deleteSong } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showReimportConns, setShowReimportConns] = useState(false);
   const [editSong, setEditSong] = useState<Song | null>(null);
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [search, setSearch] = useState('');
@@ -71,6 +73,12 @@ export function Songs() {
             <p className="text-text-secondary text-sm">{songs.length} tracks in your collection</p>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={() => setShowReimportConns(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-border text-text-secondary rounded-lg hover:text-text-primary hover:border-accent-purple/50 transition-colors"
+            >
+              <Link size={16} /> Re-import Connections
+            </button>
             <button
               onClick={() => setShowImport(true)}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-border text-text-secondary rounded-lg hover:text-text-primary hover:border-accent/50 transition-colors"
@@ -218,6 +226,10 @@ export function Songs() {
 
       {showImport && (
         <ZipImportDialog onClose={() => setShowImport(false)} />
+      )}
+
+      {showReimportConns && (
+        <ReimportConnectionsDialog onClose={() => setShowReimportConns(false)} />
       )}
     </div>
   );

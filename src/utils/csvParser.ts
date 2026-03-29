@@ -56,10 +56,9 @@ function splitConnectionList(value: string): string[] {
 }
 
 export function parseCSV(csvText: string): RawImportRow[] {
-  const lines = csvText.split(/\r?\n/).filter((l) => l.trim());
+  const lines = csvText.split(/\r\n|\n|\r/).filter((l) => l.trim());
   if (lines.length < 2) return [];
 
-  // Skip header
   const rows = lines.slice(1);
 
   return rows.map((line) => {

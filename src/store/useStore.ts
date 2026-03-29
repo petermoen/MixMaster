@@ -1,6 +1,20 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { get, set as idbSet, del } from 'idb-keyval';
 import type { Song, Setlist, Connection } from '../types';
+
+const indexedDBStorage = createJSONStorage(() => ({
+  getItem: async (name: string) => {
+    const value = await get(name);
+    return value ?? null;
+  },
+  setItem: async (name: string, value: string) => {
+    await idbSet(name, value);
+  },
+  removeItem: async (name: string) => {
+    await del(name);
+  },
+}));
 
 interface AppState {
   songs: Song[];
@@ -8,6 +22,7 @@ interface AppState {
   connections: Connection[];
 
   addSong: (song: Song) => void;
+  addSongs: (songs: Song[]) => void;
   updateSong: (id: string, song: Partial<Song>) => void;
   deleteSong: (id: string) => void;
 
@@ -19,6 +34,7 @@ interface AppState {
   reorderSetlistSongs: (setlistId: string, songs: { songId: string; position: number }[]) => void;
 
   addConnection: (connection: Connection) => void;
+  addConnections: (connections: Connection[]) => void;
   deleteConnection: (id: string) => void;
 }
 
@@ -31,6 +47,9 @@ export const useStore = create<AppState>()(
 
       addSong: (song) =>
         set((state) => ({ songs: [...state.songs, song] })),
+
+      addSongs: (newSongs) =>
+        set((state) => ({ songs: [...state.songs, ...newSongs] })),
 
       updateSong: (id, updates) =>
         set((state) => ({
@@ -101,11 +120,14 @@ export const useStore = create<AppState>()(
       addConnection: (connection) =>
         set((state) => ({ connections: [...state.connections, connection] })),
 
+      addConnections: (newConnections) =>
+        set((state) => ({ connections: [...state.connections, ...newConnections] })),
+
       deleteConnection: (id) =>
         set((state) => ({
           connections: state.connections.filter((c) => c.id !== id),
         })),
     }),
-    { name: 'mixmaster-storage' }
+    { name: 'mixmaster-storage', storage: indexedDBStorage }
   )
 );
