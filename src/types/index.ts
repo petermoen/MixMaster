@@ -1,0 +1,36 @@
+export interface Song {
+  id: string;
+  title: string;
+  artist: string;
+  bpm: number | null;
+  key: string;
+  duration: string;
+  releaseDate: string;
+  energyLevel: number;
+  genre: string;
+  recordLabel: string;
+  notes: string;
+  thumbnail: string | null;
+  createdAt: string;
+}
+
+export interface SetlistSong {
+  songId: string;
+  position: number;
+}
+
+export interface Setlist {
+  id: string;
+  title: string;
+  date: string;
+  notes: string;
+  songs: SetlistSong[];
+  createdAt: string;
+}
+
+export interface Connection {
+  id: string;
+  name: string;
+  type: string;
+  createdAt: string;
+}
