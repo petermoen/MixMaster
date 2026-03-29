@@ -1,16 +1,20 @@
 import { useState } from 'react';
-import { Plus, Search, Trash2, Edit3, Music, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Search, Trash2, Edit3, Music, ChevronUp, ChevronDown, Link, Upload } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { SongFormDialog } from '../components/SongFormDialog';
+import { SongDetailPanel } from '../components/SongDetailPanel';
+import { ZipImportDialog } from '../components/ZipImportDialog';
 import type { Song } from '../types';
 
 type SortField = 'title' | 'artist' | 'bpm' | 'key' | 'energyLevel' | 'genre' | 'releaseDate';
 type SortDir = 'asc' | 'desc';
 
 export function Songs() {
-  const { songs, addSong, updateSong, deleteSong } = useStore();
+  const { songs, connections, addSong, updateSong, deleteSong } = useStore();
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editSong, setEditSong] = useState<Song | null>(null);
+  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<SortField>('title');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -64,12 +68,20 @@ export function Songs() {
           <h1 className="text-2xl font-bold mb-1">Songs</h1>
           <p className="text-text-secondary text-sm">{songs.length} tracks in your collection</p>
         </div>
-        <button
-          onClick={() => { setEditSong(null); setShowForm(true); }}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gradient-to-r from-accent to-accent-purple text-bg-primary rounded-lg hover:opacity-90 transition-opacity"
-        >
-          <Plus size={16} /> Add Song
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-border text-text-secondary rounded-lg hover:text-text-primary hover:border-accent/50 transition-colors"
+          >
+            <Upload size={16} /> Import ZIP
+          </button>
+          <button
+            onClick={() => { setEditSong(null); setShowForm(true); }}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gradient-to-r from-accent to-accent-purple text-bg-primary rounded-lg hover:opacity-90 transition-opacity"
+          >
+            <Plus size={16} /> Add Song
+          </button>
+        </div>
       </div>
 
       <div className="relative mb-4">
@@ -78,7 +90,7 @@ export function Songs() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by title, artist, or genre..."
-          className="w-full pl-10"
+          className="w-full !pl-10 py-2.5"
         />
       </div>
 
@@ -118,48 +130,77 @@ export function Songs() {
                 </td>
               </tr>
             ) : (
-              filtered.map((song) => (
-                <tr key={song.id} className="border-b border-border/50 hover:bg-bg-hover/50 transition-colors group">
-                  <td className="p-3">
-                    {song.thumbnail ? (
-                      <img src={song.thumbnail} alt="" className="w-8 h-8 rounded object-cover" />
-                    ) : (
-                      <div className="w-8 h-8 rounded bg-bg-secondary flex items-center justify-center">
-                        <Music size={12} className="text-text-muted" />
+              filtered.map((song) => {
+                const connCount = connections.filter(
+                  (c) => c.fromSongId === song.id || c.toSongId === song.id
+                ).length;
+                return (
+                  <tr
+                    key={song.id}
+                    onClick={() => setSelectedSong(selectedSong?.id === song.id ? null : song)}
+                    className={`border-b border-border/50 hover:bg-bg-hover/50 transition-colors group cursor-pointer ${
+                      selectedSong?.id === song.id ? 'bg-bg-hover/70' : ''
+                    }`}
+                  >
+                    <td className="p-3">
+                      {song.thumbnail ? (
+                        <img src={song.thumbnail} alt="" className="w-8 h-8 rounded object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded bg-bg-secondary flex items-center justify-center">
+                          <Music size={12} className="text-text-muted" />
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-3 text-sm font-medium">
+                      <span className="flex items-center gap-2">
+                        {song.title}
+                        {connCount > 0 && (
+                          <span className="flex items-center gap-0.5 text-xs text-accent-purple">
+                            <Link size={10} /> {connCount}
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                    <td className="p-3 text-sm text-text-secondary">{song.artist}</td>
+                    <td className="p-3 text-sm font-mono text-text-secondary">{song.bpm || '-'}</td>
+                    <td className="p-3 text-sm font-mono text-accent">{song.key || '-'}</td>
+                    <td className="p-3 text-sm text-text-muted">{song.duration || '-'}</td>
+                    <td className="p-3">
+                      <span className={`text-sm font-mono font-medium ${energyColor(song.energyLevel)}`}>
+                        {song.energyLevel}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className="text-xs px-2 py-1 rounded-full bg-bg-secondary text-text-secondary border border-border">
+                        {song.genre}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={(e) => { e.stopPropagation(); setEditSong(song); setShowForm(true); }} className="p-1.5 text-text-muted hover:text-accent rounded transition-colors">
+                          <Edit3 size={14} />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); deleteSong(song.id); }} className="p-1.5 text-text-muted hover:text-energy-high rounded transition-colors">
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                    )}
-                  </td>
-                  <td className="p-3 text-sm font-medium">{song.title}</td>
-                  <td className="p-3 text-sm text-text-secondary">{song.artist}</td>
-                  <td className="p-3 text-sm font-mono text-text-secondary">{song.bpm || '-'}</td>
-                  <td className="p-3 text-sm font-mono text-accent">{song.key || '-'}</td>
-                  <td className="p-3 text-sm text-text-muted">{song.duration || '-'}</td>
-                  <td className="p-3">
-                    <span className={`text-sm font-mono font-medium ${energyColor(song.energyLevel)}`}>
-                      {song.energyLevel}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <span className="text-xs px-2 py-1 rounded-full bg-bg-secondary text-text-secondary border border-border">
-                      {song.genre}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => { setEditSong(song); setShowForm(true); }} className="p-1.5 text-text-muted hover:text-accent rounded transition-colors">
-                        <Edit3 size={14} />
-                      </button>
-                      <button onClick={() => deleteSong(song.id)} className="p-1.5 text-text-muted hover:text-energy-high rounded transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
+
+      {selectedSong && (
+        <div className="mt-4">
+          <SongDetailPanel
+            song={selectedSong}
+            onClose={() => setSelectedSong(null)}
+          />
+        </div>
+      )}
 
       {showForm && (
         <SongFormDialog
@@ -167,6 +208,10 @@ export function Songs() {
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditSong(null); }}
         />
+      )}
+
+      {showImport && (
+        <ZipImportDialog onClose={() => setShowImport(false)} />
       )}
     </div>
   );

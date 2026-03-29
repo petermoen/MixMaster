@@ -46,6 +46,9 @@ export const useStore = create<AppState>()(
               .filter((s) => s.songId !== id)
               .map((s, i) => ({ ...s, position: i })),
           })),
+          connections: state.connections.filter(
+            (c) => c.fromSongId !== id && c.toSongId !== id
+          ),
         })),
 
       addSetlist: (setlist) =>

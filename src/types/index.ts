@@ -30,7 +30,8 @@ export interface Setlist {
 
 export interface Connection {
   id: string;
-  name: string;
-  type: string;
+  fromSongId: string;
+  toSongId: string;
+  notes: string;
   createdAt: string;
 }

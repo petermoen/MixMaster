@@ -1,4 +1,4 @@
-import { Music, ListMusic, Users, TrendingUp } from 'lucide-react';
+import { Music, ListMusic, Link, TrendingUp, ArrowRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export function Dashboard() {
@@ -10,7 +10,7 @@ export function Dashboard() {
   const metrics = [
     { label: 'Songs', value: songs.length, icon: Music, color: 'from-accent to-cyan-400' },
     { label: 'Setlists', value: setlists.length, icon: ListMusic, color: 'from-accent-purple to-purple-400' },
-    { label: 'Connections', value: connections.length, icon: Users, color: 'from-accent-pink to-pink-400' },
+    { label: 'Connections', value: connections.length, icon: Link, color: 'from-accent-pink to-pink-400' },
   ];
 
   return (
@@ -66,23 +66,29 @@ export function Dashboard() {
 
         <div className="bg-bg-card border border-border rounded-xl p-5">
           <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
-            <Users size={14} className="text-accent-pink" /> Recent Connections
+            <Link size={14} className="text-accent-pink" /> Recent Connections
           </h2>
           {recentConnections.length === 0 ? (
             <p className="text-text-muted text-sm py-4 text-center">No connections yet</p>
           ) : (
             <div className="space-y-3">
-              {recentConnections.map((conn) => (
-                <div key={conn.id} className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-accent-pink/10 flex items-center justify-center">
-                    <Users size={14} className="text-accent-pink" />
+              {recentConnections.map((conn) => {
+                const fromSong = songs.find((s) => s.id === conn.fromSongId);
+                const toSong = songs.find((s) => s.id === conn.toSongId);
+                if (!fromSong || !toSong) return null;
+                return (
+                  <div key={conn.id} className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-accent-pink/10 flex items-center justify-center">
+                      <Link size={14} className="text-accent-pink" />
+                    </div>
+                    <div className="flex-1 min-w-0 flex items-center gap-1.5">
+                      <p className="text-sm font-medium truncate">{fromSong.title}</p>
+                      <ArrowRight size={12} className="text-text-muted shrink-0" />
+                      <p className="text-sm font-medium truncate">{toSong.title}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{conn.name}</p>
-                    <p className="text-xs text-text-secondary">{conn.type}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
