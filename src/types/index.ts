@@ -10,6 +10,7 @@ export interface Song {
   genre: string;
   recordLabel: string;
   notes: string;
+  youtubeUrl: string | null;
   thumbnail: string | null;
   createdAt: string;
 }

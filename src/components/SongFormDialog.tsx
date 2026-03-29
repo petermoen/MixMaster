@@ -23,6 +23,7 @@ export function SongFormDialog({ song, onSave, onClose }: Props) {
   const [genre, setGenre] = useState(song?.genre ?? 'Trance');
   const [recordLabel, setRecordLabel] = useState(song?.recordLabel ?? '');
   const [notes, setNotes] = useState(song?.notes ?? '');
+  const [youtubeUrl, setYoutubeUrl] = useState(song?.youtubeUrl ?? '');
   const [thumbnail, setThumbnail] = useState<string | null>(song?.thumbnail ?? null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,6 +49,7 @@ export function SongFormDialog({ song, onSave, onClose }: Props) {
       genre,
       recordLabel,
       notes,
+      youtubeUrl: youtubeUrl.trim() || null,
       thumbnail,
     });
   };
@@ -123,6 +125,11 @@ export function SongFormDialog({ song, onSave, onClose }: Props) {
               <label className="block text-xs text-text-secondary mb-1">Record Label</label>
               <input value={recordLabel} onChange={(e) => setRecordLabel(e.target.value)} placeholder="Label name" className="w-full" />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs text-text-secondary mb-1">YouTube URL</label>
+            <input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="w-full" />
           </div>
 
           <div>

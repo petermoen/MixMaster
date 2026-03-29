@@ -48,6 +48,7 @@ export interface RawImportRow {
   mixInSongs: string[];
   mixOutSongs: string[];
   imageFilename: string;
+  youtubeUrl: string;
 }
 
 function splitConnectionList(value: string): string[] {
@@ -77,6 +78,7 @@ export function parseCSV(csvText: string): RawImportRow[] {
       mixInSongs: splitConnectionList(f[10] || ''),
       mixOutSongs: splitConnectionList(f[11] || ''),
       imageFilename: f[12] || '',
+      youtubeUrl: f[13] || '',
     };
   }).filter((r) => r.title);
 }

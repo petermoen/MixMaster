@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   X, Plus, ArrowRight, ArrowLeft, Trash2, Music, Link,
-  Edit3, Clock, Disc3, Tag, Zap, Calendar, Building2,
+  Edit3, Clock, Disc3, Tag, Zap, Calendar, Building2, Play,
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { ConnectSongDialog } from './ConnectSongDialog';
@@ -17,6 +17,7 @@ interface Props {
 export function SongDetailPanel({ song, onClose, onEdit, onSelectSong }: Props) {
   const { songs, connections, addConnection, deleteConnection } = useStore();
   const [showConnect, setShowConnect] = useState(false);
+  const [showYoutube, setShowYoutube] = useState(false);
 
   const mixOuts = connections
     .filter((c) => c.fromSongId === song.id)
@@ -176,6 +177,18 @@ export function SongDetailPanel({ song, onClose, onEdit, onSelectSong }: Props) 
               <MetaItem icon={Tag} label="Genre" value={song.genre || '-'} />
               <MetaItem icon={Building2} label="Label" value={song.recordLabel || '-'} />
               <MetaItem icon={Calendar} label="Released" value={song.releaseDate || '-'} />
+              {song.youtubeUrl && (
+                <div
+                  onClick={() => setShowYoutube(true)}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-bg-card hover:bg-bg-hover/50 cursor-pointer transition-colors"
+                >
+                  <Play size={12} className="text-energy-high shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-text-muted leading-none mb-0.5">YouTube</p>
+                    <p className="text-xs font-medium text-accent truncate">Watch</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -260,7 +273,60 @@ export function SongDetailPanel({ song, onClose, onEdit, onSelectSong }: Props) 
           onClose={() => setShowConnect(false)}
         />
       )}
+
+      {showYoutube && song.youtubeUrl && (
+        <YoutubePlayerDialog url={song.youtubeUrl} onClose={() => setShowYoutube(false)} />
+      )}
     </>
+  );
+}
+
+function extractYoutubeId(url: string): string | null {
+  const patterns = [
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+function YoutubePlayerDialog({ url, onClose }: { url: string; onClose: () => void }) {
+  const videoId = extractYoutubeId(url);
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-bg-card border border-border rounded-xl w-full max-w-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-3 border-b border-border">
+          <span className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
+            <Play size={12} className="text-energy-high" /> YouTube
+          </span>
+          <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary rounded transition-colors">
+            <X size={14} />
+          </button>
+        </div>
+        <div className="p-3">
+          {videoId ? (
+            <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                title="YouTube video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted text-center py-8">Could not load video from URL</p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

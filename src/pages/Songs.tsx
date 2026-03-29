@@ -16,7 +16,8 @@ export function Songs() {
   const [showImport, setShowImport] = useState(false);
   const [showReimportConns, setShowReimportConns] = useState(false);
   const [editSong, setEditSong] = useState<Song | null>(null);
-  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
+  const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
+  const selectedSong = selectedSongId ? songs.find((s) => s.id === selectedSongId) ?? null : null;
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<SortField>('title');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -54,7 +55,8 @@ export function Songs() {
     if (editSong) {
       updateSong(editSong.id, data);
     } else {
-      addSong({ ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
+      const newSong = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+      addSong(newSong);
     }
     setShowForm(false);
     setEditSong(null);
@@ -147,7 +149,7 @@ export function Songs() {
                   return (
                     <tr
                       key={song.id}
-                      onClick={() => setSelectedSong(selectedSong?.id === song.id ? null : song)}
+                      onClick={() => setSelectedSongId(selectedSongId === song.id ? null : song.id)}
                       className={`border-b border-border/50 hover:bg-bg-hover/50 transition-colors group cursor-pointer ${
                         selectedSong?.id === song.id ? 'bg-bg-hover/70' : ''
                       }`}
@@ -209,9 +211,9 @@ export function Songs() {
         <div className="w-[380px] shrink-0 border-l-0">
           <SongDetailPanel
             song={selectedSong}
-            onClose={() => setSelectedSong(null)}
+            onClose={() => setSelectedSongId(null)}
             onEdit={(song) => { setEditSong(song); setShowForm(true); }}
-            onSelectSong={setSelectedSong}
+            onSelectSong={(song) => setSelectedSongId(song.id)}
           />
         </div>
       )}

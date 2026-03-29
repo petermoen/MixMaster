@@ -101,6 +101,7 @@ export function ZipImportDialog({ onClose }: Props) {
       releaseDate: s.releaseDate,
       recordLabel: s.recordLabel,
       notes: s.notes,
+      youtubeUrl: s.youtubeUrl,
       thumbnail: s.thumbnail,
       createdAt: new Date().toISOString(),
     }));

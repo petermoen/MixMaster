@@ -18,6 +18,7 @@ export interface ImportSongPreview {
   imageFound: boolean;
   mixInTitles: string[];
   mixOutTitles: string[];
+  youtubeUrl: string | null;
   selected: boolean;
 }
 
@@ -148,6 +149,7 @@ export async function parseZipImport(
       imageFound,
       mixInTitles: row.mixInSongs,
       mixOutTitles: row.mixOutSongs,
+      youtubeUrl: row.youtubeUrl || null,
       selected: true,
     });
   }
