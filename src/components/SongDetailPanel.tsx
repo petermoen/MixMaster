@@ -173,11 +173,11 @@ export function SongDetailPanel({ song, onClose, onEdit, onSelectSong }: Props) 
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <MetaItem icon={Tag} label="Genre" value={song.genre || '-'} />
               <MetaItem icon={Building2} label="Label" value={song.recordLabel || '-'} />
               <MetaItem icon={Calendar} label="Released" value={song.releaseDate || '-'} />
-              {song.youtubeUrl && (
+              {song.youtubeUrl ? (
                 <div
                   onClick={() => setShowYoutube(true)}
                   className="flex items-center gap-2 p-2 rounded-lg bg-bg-card hover:bg-bg-hover/50 cursor-pointer transition-colors"
@@ -188,6 +188,8 @@ export function SongDetailPanel({ song, onClose, onEdit, onSelectSong }: Props) 
                     <p className="text-xs font-medium text-accent truncate">Watch</p>
                   </div>
                 </div>
+              ) : (
+                <MetaItem icon={Play} label="YouTube" value="-" />
               )}
             </div>
           </div>

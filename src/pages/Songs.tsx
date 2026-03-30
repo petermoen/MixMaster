@@ -19,6 +19,7 @@ export function Songs() {
   const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
   const selectedSong = selectedSongId ? songs.find((s) => s.id === selectedSongId) ?? null : null;
   const [search, setSearch] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('title');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
@@ -188,14 +189,31 @@ export function Songs() {
                         </span>
                       </td>
                       <td className="p-3">
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={(e) => { e.stopPropagation(); setEditSong(song); setShowForm(true); }} className="p-1.5 text-text-muted hover:text-accent rounded transition-colors">
-                            <Edit3 size={14} />
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); deleteSong(song.id); }} className="p-1.5 text-text-muted hover:text-energy-high rounded transition-colors">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                        {confirmDeleteId === song.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); deleteSong(song.id); setConfirmDeleteId(null); }}
+                              className="px-2 py-0.5 text-[10px] font-medium text-energy-high bg-energy-high/10 rounded hover:bg-energy-high/20 transition-colors"
+                            >
+                              Remove
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                              className="px-2 py-0.5 text-[10px] font-medium text-text-muted hover:text-text-primary rounded transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={(e) => { e.stopPropagation(); setEditSong(song); setShowForm(true); }} className="p-1.5 text-text-muted hover:text-accent rounded transition-colors">
+                              <Edit3 size={14} />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(song.id); }} className="p-1.5 text-text-muted hover:text-energy-high rounded transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );

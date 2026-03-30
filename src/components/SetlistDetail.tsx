@@ -14,6 +14,7 @@ interface Props {
 function SortableSongRow({ song, position, onRemove }: { song: Song; position: number; onRemove: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: song.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 p-3 bg-bg-secondary rounded-lg border border-border group">
@@ -35,9 +36,26 @@ function SortableSongRow({ song, position, onRemove }: { song: Song; position: n
       <span className="text-xs text-text-muted font-mono">{song.bpm ? `${song.bpm} BPM` : ''}</span>
       <span className="text-xs text-accent font-mono">{song.key}</span>
       <span className="text-xs text-text-muted">{song.duration}</span>
-      <button onClick={onRemove} className="text-text-muted hover:text-energy-high opacity-0 group-hover:opacity-100 transition-opacity">
-        <Trash2 size={14} />
-      </button>
+      {confirming ? (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onRemove}
+            className="px-2 py-0.5 text-[10px] font-medium text-energy-high bg-energy-high/10 rounded hover:bg-energy-high/20 transition-colors"
+          >
+            Remove
+          </button>
+          <button
+            onClick={() => setConfirming(false)}
+            className="px-2 py-0.5 text-[10px] font-medium text-text-muted hover:text-text-primary rounded transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button onClick={() => setConfirming(true)} className="text-text-muted hover:text-energy-high opacity-0 group-hover:opacity-100 transition-opacity">
+          <Trash2 size={14} />
+        </button>
+      )}
     </div>
   );
 }
@@ -82,7 +100,7 @@ export function SetlistDetail({ setlist, onBack }: Props) {
   const mins = Math.floor((totalDuration % 3600) / 60);
 
   return (
-    <div>
+    <div className="p-8 overflow-y-auto h-full">
       <button onClick={onBack} className="flex items-center gap-2 text-text-secondary hover:text-accent mb-6 transition-colors">
         <ArrowLeft size={16} /> Back to Setlists
       </button>
