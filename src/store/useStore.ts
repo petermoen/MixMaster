@@ -31,7 +31,8 @@ interface AppState {
   deleteSetlist: (id: string) => void;
   addSongToSetlist: (setlistId: string, songId: string) => void;
   removeSongFromSetlist: (setlistId: string, songId: string) => void;
-  reorderSetlistSongs: (setlistId: string, songs: { songId: string; position: number }[]) => void;
+  updateSetlistSong: (setlistId: string, songId: string, updates: { cueIn?: string; cueOut?: string; notes?: string }) => void;
+  reorderSetlistSongs: (setlistId: string, songs: { songId: string; position: number; cueIn?: string; cueOut?: string; notes?: string }[]) => void;
 
   addConnection: (connection: Connection) => void;
   addConnections: (connections: Connection[]) => void;
@@ -92,7 +93,7 @@ export const useStore = create<AppState>()(
             if (sl.songs.some((s) => s.songId === songId)) return sl;
             return {
               ...sl,
-              songs: [...sl.songs, { songId, position: sl.songs.length }],
+              songs: [...sl.songs, { songId, position: sl.songs.length, cueIn: '', cueOut: '', notes: '' }],
             };
           }),
         })),
@@ -106,6 +107,19 @@ export const useStore = create<AppState>()(
               songs: sl.songs
                 .filter((s) => s.songId !== songId)
                 .map((s, i) => ({ ...s, position: i })),
+            };
+          }),
+        })),
+
+      updateSetlistSong: (setlistId, songId, updates) =>
+        set((state) => ({
+          setlists: state.setlists.map((sl) => {
+            if (sl.id !== setlistId) return sl;
+            return {
+              ...sl,
+              songs: sl.songs.map((s) =>
+                s.songId === songId ? { ...s, ...updates } : s
+              ),
             };
           }),
         })),

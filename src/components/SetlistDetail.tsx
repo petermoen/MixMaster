@@ -4,6 +4,7 @@ import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useStore } from '../store/useStore';
+import { SetlistSongPanel } from './SetlistSongPanel';
 import type { Setlist, Song } from '../types';
 
 interface Props {
@@ -11,14 +12,34 @@ interface Props {
   onBack: () => void;
 }
 
-function SortableSongRow({ song, position, onRemove }: { song: Song; position: number; onRemove: () => void }) {
+function SortableSongRow({ song, position, isSelected, onRemove, onClick }: {
+  song: Song;
+  position: number;
+  isSelected: boolean;
+  onRemove: () => void;
+  onClick: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: song.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const [confirming, setConfirming] = useState(false);
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-3 p-3 bg-bg-secondary rounded-lg border border-border group">
-      <button {...attributes} {...listeners} className="text-text-muted hover:text-text-primary cursor-grab active:cursor-grabbing">
+    <div
+      ref={setNodeRef}
+      style={style}
+      onClick={onClick}
+      className={`flex items-center gap-3 p-3 rounded-lg border group cursor-pointer transition-colors ${
+        isSelected
+          ? 'bg-bg-hover/70 border-accent/30'
+          : 'bg-bg-secondary border-border hover:bg-bg-hover/50'
+      }`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        onClick={(e) => e.stopPropagation()}
+        className="text-text-muted hover:text-text-primary cursor-grab active:cursor-grabbing"
+      >
         <GripVertical size={16} />
       </button>
       <span className="text-xs text-text-muted w-6 text-center font-mono">{position + 1}</span>
@@ -39,20 +60,23 @@ function SortableSongRow({ song, position, onRemove }: { song: Song; position: n
       {confirming ? (
         <div className="flex items-center gap-1">
           <button
-            onClick={onRemove}
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
             className="px-2 py-0.5 text-[10px] font-medium text-energy-high bg-energy-high/10 rounded hover:bg-energy-high/20 transition-colors"
           >
             Remove
           </button>
           <button
-            onClick={() => setConfirming(false)}
+            onClick={(e) => { e.stopPropagation(); setConfirming(false); }}
             className="px-2 py-0.5 text-[10px] font-medium text-text-muted hover:text-text-primary rounded transition-colors"
           >
             Cancel
           </button>
         </div>
       ) : (
-        <button onClick={() => setConfirming(true)} className="text-text-muted hover:text-energy-high opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={(e) => { e.stopPropagation(); setConfirming(true); }}
+          className="text-text-muted hover:text-energy-high opacity-0 group-hover:opacity-100 transition-opacity"
+        >
           <Trash2 size={14} />
         </button>
       )}
@@ -64,11 +88,15 @@ export function SetlistDetail({ setlist, onBack }: Props) {
   const { songs, addSongToSetlist, removeSongFromSetlist, reorderSetlistSongs } = useStore();
   const [showPicker, setShowPicker] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
 
   const setlistSongs = setlist.songs
     .sort((a, b) => a.position - b.position)
     .map((s) => songs.find((song) => song.id === s.songId))
     .filter(Boolean) as Song[];
+
+  const selectedSong = selectedSongId ? songs.find((s) => s.id === selectedSongId) ?? null : null;
+  const selectedSetlistSong = selectedSongId ? setlist.songs.find((s) => s.songId === selectedSongId) ?? null : null;
 
   const availableSongs = songs.filter(
     (s) => !setlist.songs.some((ss) => ss.songId === s.id) &&
@@ -87,7 +115,16 @@ export function SetlistDetail({ setlist, onBack }: Props) {
 
     reorderSetlistSongs(
       setlist.id,
-      reordered.map((s, i) => ({ songId: s.id, position: i }))
+      reordered.map((s, i) => {
+        const existing = setlist.songs.find((ss) => ss.songId === s.id);
+        return {
+          songId: s.id,
+          position: i,
+          cueIn: existing?.cueIn ?? '',
+          cueOut: existing?.cueOut ?? '',
+          notes: existing?.notes ?? '',
+        };
+      })
     );
   };
 
@@ -100,99 +137,119 @@ export function SetlistDetail({ setlist, onBack }: Props) {
   const mins = Math.floor((totalDuration % 3600) / 60);
 
   return (
-    <div className="p-8 overflow-y-auto h-full">
-      <button onClick={onBack} className="flex items-center gap-2 text-text-secondary hover:text-accent mb-6 transition-colors">
-        <ArrowLeft size={16} /> Back to Setlists
-      </button>
-
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">{setlist.title}</h1>
-          <p className="text-text-secondary text-sm">
-            {setlist.date} &middot; {setlistSongs.length} tracks
-            {totalDuration > 0 && ` \u00b7 ${hours > 0 ? `${hours}h ` : ''}${mins}m`}
-          </p>
-          {setlist.notes && <p className="text-text-muted text-sm mt-2">{setlist.notes}</p>}
-        </div>
-        <button
-          onClick={() => setShowPicker(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent/10 text-accent border border-accent/20 rounded-lg hover:bg-accent/20 transition-colors"
-        >
-          <Plus size={16} /> Add Song
+    <div className="flex h-full">
+      {/* Main content */}
+      <div className="flex-1 min-w-0 p-8 overflow-y-auto">
+        <button onClick={onBack} className="flex items-center gap-2 text-text-secondary hover:text-accent mb-6 transition-colors">
+          <ArrowLeft size={16} /> Back to Setlists
         </button>
-      </div>
 
-      {setlistSongs.length === 0 ? (
-        <div className="text-center py-16 text-text-muted">
-          <Music size={40} className="mx-auto mb-3 opacity-40" />
-          <p>No tracks in this setlist yet</p>
-          <p className="text-sm mt-1">Click "Add Song" to start building your set</p>
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold mb-1">{setlist.title}</h1>
+            <p className="text-text-secondary text-sm">
+              {setlist.date} &middot; {setlistSongs.length} tracks
+              {totalDuration > 0 && ` \u00b7 ${hours > 0 ? `${hours}h ` : ''}${mins}m`}
+            </p>
+            {setlist.notes && <p className="text-text-muted text-sm mt-2">{setlist.notes}</p>}
+          </div>
+          <button
+            onClick={() => setShowPicker(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent/10 text-accent border border-accent/20 rounded-lg hover:bg-accent/20 transition-colors"
+          >
+            <Plus size={16} /> Add Song
+          </button>
         </div>
-      ) : (
-        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={setlistSongs.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-            <div className="space-y-2">
-              {setlistSongs.map((song, i) => (
-                <SortableSongRow
-                  key={song.id}
-                  song={song}
-                  position={i}
-                  onRemove={() => removeSongFromSetlist(setlist.id, song.id)}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      )}
 
-      {showPicker && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-bg-card border border-border rounded-2xl w-full max-w-lg max-h-[70vh] flex flex-col">
-            <div className="p-4 border-b border-border">
-              <h3 className="text-sm font-semibold mb-3">Add Songs to Setlist</h3>
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search songs..."
-                className="w-full"
-                autoFocus
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto p-2">
-              {availableSongs.length === 0 ? (
-                <p className="text-center text-text-muted py-8 text-sm">No songs available</p>
-              ) : (
-                availableSongs.map((song) => (
-                  <button
+        {setlistSongs.length === 0 ? (
+          <div className="text-center py-16 text-text-muted">
+            <Music size={40} className="mx-auto mb-3 opacity-40" />
+            <p>No tracks in this setlist yet</p>
+            <p className="text-sm mt-1">Click "Add Song" to start building your set</p>
+          </div>
+        ) : (
+          <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={setlistSongs.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2">
+                {setlistSongs.map((song, i) => (
+                  <SortableSongRow
                     key={song.id}
-                    onClick={() => {
-                      addSongToSetlist(setlist.id, song.id);
+                    song={song}
+                    position={i}
+                    isSelected={selectedSongId === song.id}
+                    onRemove={() => {
+                      removeSongFromSetlist(setlist.id, song.id);
+                      if (selectedSongId === song.id) setSelectedSongId(null);
                     }}
-                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-bg-hover text-left transition-colors"
-                  >
-                    {song.thumbnail ? (
-                      <img src={song.thumbnail} alt="" className="w-8 h-8 rounded object-cover" />
-                    ) : (
-                      <div className="w-8 h-8 rounded bg-bg-secondary flex items-center justify-center">
-                        <Music size={12} className="text-text-muted" />
+                    onClick={() => setSelectedSongId(selectedSongId === song.id ? null : song.id)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+
+        {showPicker && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-bg-card border border-border rounded-2xl w-full max-w-lg max-h-[70vh] flex flex-col">
+              <div className="p-4 border-b border-border">
+                <h3 className="text-sm font-semibold mb-3">Add Songs to Setlist</h3>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search songs..."
+                  className="w-full"
+                  autoFocus
+                />
+              </div>
+              <div className="flex-1 overflow-y-auto p-2">
+                {availableSongs.length === 0 ? (
+                  <p className="text-center text-text-muted py-8 text-sm">No songs available</p>
+                ) : (
+                  availableSongs.map((song) => (
+                    <button
+                      key={song.id}
+                      onClick={() => {
+                        addSongToSetlist(setlist.id, song.id);
+                      }}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-bg-hover text-left transition-colors"
+                    >
+                      {song.thumbnail ? (
+                        <img src={song.thumbnail} alt="" className="w-8 h-8 rounded object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded bg-bg-secondary flex items-center justify-center">
+                          <Music size={12} className="text-text-muted" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{song.title}</p>
+                        <p className="text-xs text-text-secondary">{song.artist}</p>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{song.title}</p>
-                      <p className="text-xs text-text-secondary">{song.artist}</p>
-                    </div>
-                    <span className="text-xs text-text-muted">{song.bpm} BPM</span>
-                    <Plus size={14} className="text-accent" />
-                  </button>
-                ))
-              )}
-            </div>
-            <div className="p-3 border-t border-border">
-              <button onClick={() => setShowPicker(false)} className="w-full py-2 text-sm text-text-secondary hover:text-text-primary transition-colors">
-                Done
-              </button>
+                      <span className="text-xs text-text-muted">{song.bpm} BPM</span>
+                      <Plus size={14} className="text-accent" />
+                    </button>
+                  ))
+                )}
+              </div>
+              <div className="p-3 border-t border-border">
+                <button onClick={() => setShowPicker(false)} className="w-full py-2 text-sm text-text-secondary hover:text-text-primary transition-colors">
+                  Done
+                </button>
+              </div>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* Side panel */}
+      {selectedSong && selectedSetlistSong && (
+        <div className="w-[380px] shrink-0">
+          <SetlistSongPanel
+            song={selectedSong}
+            setlistSong={selectedSetlistSong}
+            setlistId={setlist.id}
+            onClose={() => setSelectedSongId(null)}
+          />
         </div>
       )}
     </div>

@@ -18,6 +18,9 @@ export interface Song {
 export interface SetlistSong {
   songId: string;
   position: number;
+  cueIn: string;
+  cueOut: string;
+  notes: string;
 }
 
 export interface Setlist {
