@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { get, set as idbSet, del } from 'idb-keyval';
+import { useSyncExternalStore } from 'react';
 import type { Song, Setlist, Connection } from '../types';
 
 const indexedDBStorage = createJSONStorage(() => ({
@@ -142,6 +143,22 @@ export const useStore = create<AppState>()(
           connections: state.connections.filter((c) => c.id !== id),
         })),
     }),
-    { name: 'mixmaster-storage', storage: indexedDBStorage }
+    {
+      name: 'mixmaster-storage',
+      storage: indexedDBStorage,
+      skipHydration: true,
+    }
   )
 );
+
+// Hydration hook — blocks rendering until IndexedDB data is loaded
+export function useStoreHydration() {
+  return useSyncExternalStore(
+    useStore.persist.onFinishHydration,
+    () => useStore.persist.hasHydrated(),
+    () => false
+  );
+}
+
+// Trigger hydration once
+useStore.persist.rehydrate();
