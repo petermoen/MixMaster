@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { X, Image } from 'lucide-react';
 import type { Song } from '../types';
 import { BeatportSearch } from './BeatportSearch';
+import { YoutubeSearch } from './YoutubeSearch';
 import type { BeatportTrack } from '../api/client';
 
 interface Props {
@@ -172,9 +173,10 @@ export function SongFormDialog({ song, onSave, onClose }: Props) {
             </div>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <label className="block text-xs text-text-secondary mb-1">YouTube URL</label>
             <input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="w-full" />
+            <YoutubeSearch artist={artist} title={title} value={youtubeUrl} onChange={setYoutubeUrl} />
           </div>
 
           <div>

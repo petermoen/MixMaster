@@ -61,7 +61,18 @@ export interface BeatportTrack {
   beatportUrl: string;
 }
 
+export interface YoutubeVideo {
+  videoId: string;
+  title: string;
+  channel: string | null;
+  durationSeconds: number | null;
+  thumbnailUrl: string | null;
+  url: string;
+}
+
 export const metadataApi = {
   search: (query: string) =>
     request<BeatportTrack[]>('GET', `/api/metadata/search?q=${encodeURIComponent(query)}`),
+  youtube: (query: string) =>
+    request<YoutubeVideo[]>('GET', `/api/metadata/youtube?q=${encodeURIComponent(query)}`),
 };
