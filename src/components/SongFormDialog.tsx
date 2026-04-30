@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
-import { X, Upload, Image } from 'lucide-react';
+import { X, Image } from 'lucide-react';
 import type { Song } from '../types';
+import { BeatportSearch } from './BeatportSearch';
+import type { BeatportTrack } from '../api/client';
 
 interface Props {
   song?: Song | null;
@@ -11,6 +13,28 @@ interface Props {
 const KEYS = ['Am', 'A', 'Bbm', 'Bb', 'Bm', 'B', 'Cm', 'C', 'C#m', 'Db', 'Dm', 'D', 'Ebm', 'Eb', 'Em', 'E', 'Fm', 'F', 'F#m', 'F#', 'Gm', 'G', 'G#m', 'Ab'];
 const GENRES = ['Trance', 'Progressive Trance', 'Uplifting Trance', 'Psytrance', 'Tech Trance', 'Vocal Trance', 'Techno', 'Progressive House', 'Deep House', 'Melodic Techno'];
 const ENERGY_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+// Maps Beatport key labels (e.g. "G Minor", "Db Major") to MixMaster's KEYS codes.
+// Enharmonic equivalents map to the spelling MixMaster already lists.
+const BEATPORT_KEY_MAP: Record<string, string> = {
+  'A Minor': 'Am', 'A Major': 'A',
+  'Bb Minor': 'Bbm', 'Bb Major': 'Bb', 'A# Minor': 'Bbm', 'A# Major': 'Bb',
+  'B Minor': 'Bm', 'B Major': 'B',
+  'C Minor': 'Cm', 'C Major': 'C',
+  'C# Minor': 'C#m', 'Db Major': 'Db', 'Db Minor': 'C#m', 'C# Major': 'Db',
+  'D Minor': 'Dm', 'D Major': 'D',
+  'Eb Minor': 'Ebm', 'Eb Major': 'Eb', 'D# Minor': 'Ebm', 'D# Major': 'Eb',
+  'E Minor': 'Em', 'E Major': 'E',
+  'F Minor': 'Fm', 'F Major': 'F',
+  'F# Minor': 'F#m', 'F# Major': 'F#', 'Gb Minor': 'F#m', 'Gb Major': 'F#',
+  'G Minor': 'Gm', 'G Major': 'G',
+  'G# Minor': 'G#m', 'Ab Major': 'Ab', 'Ab Minor': 'G#m', 'G# Major': 'Ab',
+};
+
+const formatDurationMs = (ms: number): string => {
+  const total = Math.round(ms / 1000);
+  return `${Math.floor(total / 60)}:${(total % 60).toString().padStart(2, '0')}`;
+};
 
 export function SongFormDialog({ song, onSave, onClose }: Props) {
   const [title, setTitle] = useState(song?.title ?? '');
@@ -34,6 +58,26 @@ export function SongFormDialog({ song, onSave, onClose }: Props) {
     reader.onload = () => setThumbnail(reader.result as string);
     reader.readAsDataURL(file);
   };
+
+  const applyBeatport = (t: BeatportTrack) => {
+    const fullTitle =
+      t.mixName && t.mixName !== 'Original Mix' ? `${t.title} (${t.mixName})` : t.title;
+    setTitle(fullTitle);
+    setArtist(t.artists.join(', '));
+    if (t.bpm != null) setBpm(t.bpm.toString());
+    if (t.key) {
+      const mapped = BEATPORT_KEY_MAP[t.key];
+      if (mapped) setKey(mapped);
+    }
+    if (t.durationMs != null) setDuration(formatDurationMs(t.durationMs));
+    if (t.releaseDate) setReleaseDate(t.releaseDate);
+    if (t.genre) setGenre(t.genre);
+    if (t.label) setRecordLabel(t.label);
+    if (t.artworkUrl) setThumbnail(t.artworkUrl);
+  };
+
+  // Allow display of a genre that's not in the predefined list (e.g. from Beatport)
+  const genreOptions = GENRES.includes(genre) || !genre ? GENRES : [genre, ...GENRES];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +109,7 @@ export function SongFormDialog({ song, onSave, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {!song && <BeatportSearch onSelect={applyBeatport} />}
           <div className="flex gap-4">
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -118,7 +163,7 @@ export function SongFormDialog({ song, onSave, onClose }: Props) {
             <div>
               <label className="block text-xs text-text-secondary mb-1">Genre</label>
               <select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full">
-                {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+                {genreOptions.map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
             <div>

@@ -45,3 +45,23 @@ export const connectionsApi = {
     request<Connection[]>('POST', '/api/connections/batch', connections),
   delete: (id: string) => request<void>('DELETE', `/api/connections/${id}`),
 };
+
+export interface BeatportTrack {
+  id: number;
+  title: string;
+  mixName: string | null;
+  artists: string[];
+  bpm: number | null;
+  key: string | null;
+  genre: string | null;
+  label: string | null;
+  releaseDate: string | null;
+  durationMs: number | null;
+  artworkUrl: string | null;
+  beatportUrl: string;
+}
+
+export const metadataApi = {
+  search: (query: string) =>
+    request<BeatportTrack[]>('GET', `/api/metadata/search?q=${encodeURIComponent(query)}`),
+};
