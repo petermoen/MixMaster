@@ -157,7 +157,7 @@ export function Songs() {
                     >
                       <td className="p-3">
                         {song.thumbnail ? (
-                          <img src={song.thumbnail} alt="" className="w-8 h-8 rounded object-cover" />
+                          <img src={song.thumbnail} alt="" className="w-8 h-8 max-w-none rounded object-cover" />
                         ) : (
                           <div className="w-8 h-8 rounded bg-bg-secondary flex items-center justify-center">
                             <Music size={12} className="text-text-muted" />
