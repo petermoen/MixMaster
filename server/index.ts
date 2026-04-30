@@ -5,7 +5,7 @@ import connectionsRouter from './routes/connections.js';
 import metadataRouter from './routes/metadata.js';
 
 const app = express();
-app.use(express.json({ limit: '20mb' }));
+app.use(express.json({ limit: '200mb' }));
 
 app.use('/api/songs', songsRouter);
 app.use('/api/setlists', setlistsRouter);

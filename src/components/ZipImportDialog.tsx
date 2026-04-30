@@ -109,7 +109,7 @@ export function ZipImportDialog({ onClose }: Props) {
     // Add all songs in one batch
     setImportProgress({ current: Math.floor(total / 2), total, phase: `Adding ${total} songs...` });
     await new Promise((r) => setTimeout(r, 0));
-    addSongs(songsToAdd);
+    await addSongs(songsToAdd);
 
     // Resolve connections
     setImportProgress({ current: total, total, phase: 'Resolving connections...' });
@@ -125,7 +125,7 @@ export function ZipImportDialog({ onClose }: Props) {
         notes: '',
         createdAt: new Date().toISOString(),
       }));
-      addConnections(connectionsToAdd);
+      await addConnections(connectionsToAdd);
     }
 
     setImportStats({
